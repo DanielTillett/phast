@@ -1,0 +1,31 @@
+RewriteEngine on
+
+RewriteRule ^index\.php$ - [L]
+
+# Match the 'url' part of the PATH_INFO and move it into PHAST_URL
+RewriteCond %{ENV:PHAST_URL_SET} ^$
+RewriteRule (?:^|&)url=([^&]*)(?:$|&) - [E=PHAST_URL:$1,E=PHAST_URL_SET:1]
+
+# Decode parameters (repeat this for every printable ASCII character)
+RewriteCond %{ENV:PHAST_URL_SET} ^1$
+RewriteCond %{ENV:PHAST_URL} ^(.*?)-2F(.*)$
+RewriteRule (.*) - [E=PHAST_URL:%1/%2,N]
+
+RewriteCond %{ENV:PHAST_URL_SET} ^1$
+RewriteCond %{ENV:PHAST_URL} ^(.*?)-3A(.*)$
+RewriteRule (.*) - [E=PHAST_URL:%1:%2,N]
+
+RewriteCond %{ENV:PHAST_URL_SET} ^1$
+RewriteCond %{ENV:PHAST_URL} ^(.*?)-2D(.*)$
+RewriteRule (.*) - [E=PHAST_URL:%1-%2,N]
+
+RewriteCond %{ENV:PHAST_URL_SET} ^1$
+RewriteCond %{ENV:PHAST_URL} ^(.*?)-3F(.*)$
+RewriteRule (.*) - [E=PHAST_URL:%1?%2,N]
+# And so forth...
+
+# Send PHAST_LINK_HEADER if it is defined
+Header set Link "<%{REDIRECT_PHAST_URL}e>; rel=canonical" env=REDIRECT_PHAST_URL
+
+# Finally rewrite everything to our service
+RewriteRule .* index.php
