@@ -1,0 +1,7 @@
+#!/usr/bin/env php
+<?php
+
+chdir(__DIR__ . '/..');
+
+$phar = new Phar('phast.phar', 0, 'phast.phar');
+$phar->buildFromIterator(new RecursiveDirectoryIterator('src'), '.');
