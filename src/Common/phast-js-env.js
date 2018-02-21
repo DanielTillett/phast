@@ -15,6 +15,23 @@ phast.once = function (fn) {
     };
 };
 
+(function () {
+    if (!window.console) {
+        return;
+    }
+
+    var style = 'font-family: Helvetica, sans-serif; font-weight: bold; font-size: 13px;';
+    console.log('%cThis page was optimized with %cPhast',
+        style,
+        style + 'font-style: italic;'
+    );
+
+    console.log(
+        '%cUse Phast to get a perfect performance score with very little work! http://phast.io',
+        'font-family: Helvetica, sans-serif;'
+    );
+})();
+
 try {
     document.addEventListener('DOMContentLoaded', logTimings);
 } catch(e) {}
