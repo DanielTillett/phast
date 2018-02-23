@@ -4,7 +4,7 @@ RUN = docker run -it -v $(shell pwd):/data -w /data $(shell cat .docker-image-id
 .PHONY : all test test-local update docker
 
 
-all : vendor/autoload.php
+all : vendor/autoload.php node_modules
 
 test : all docker
 	$(RUN) vendor/bin/phpunit
@@ -26,6 +26,10 @@ vendor/composer.phar :
 	wget -O $@~ https://github.com/composer/composer/releases/download/1.6.3/composer.phar
 	chmod +x $@~
 	mv $@~ $@
+
+
+node_modules : package.json package-lock.json
+	npm install
 
 .docker-image-id : Dockerfile docker/entrypoint
 	docker build -q . > $@~
