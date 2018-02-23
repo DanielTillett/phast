@@ -37,7 +37,7 @@ function logTimings() {
     m.push([" "]);
     var f = [];
     var p = [];
-    m.forEach(function (i) {
+    m.forEach((i) => {
         f.push(i.shift());
         p = p.concat(i);
     });
@@ -54,5 +54,5 @@ function logTimings() {
 }
 
 while (phast.scripts.length) {
-    (phast.scripts.shift())();
+    phast.scripts.shift()();
 }

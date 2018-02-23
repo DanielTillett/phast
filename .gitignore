@@ -1,3 +1,4 @@
 /node_modules
 /vendor
 /.docker-image-id
+/src/Common/phast-js-env.js
