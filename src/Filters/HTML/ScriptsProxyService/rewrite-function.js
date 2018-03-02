@@ -65,6 +65,7 @@ function processNode(el) {
     }
     var id = getScriptId(el.src);
     el.setAttribute('data-phast-proxied-script', id);
+    // TODO: Use an attribute to restore the original src
     el.src = config.serviceUrl +
         '&src=' + encodeURIComponent(el.src) +
         '&cacheMarker=' + encodeURIComponent(cacheMarker) +
@@ -72,6 +73,7 @@ function processNode(el) {
 }
 
 function getScriptId(src) {
+    // TODO: Use the same hashing funcs in php and js
     var hash = murmurhash3_32_gc(src);
     ids[hash] = ids[hash] || 0;
     var count = ++ids[hash];
