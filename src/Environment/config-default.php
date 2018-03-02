@@ -19,7 +19,9 @@ return [
 
     'publicStorage' => [
         'storeDir' => $_SERVER['DOCUMENT_ROOT'] . '/phast-public-storage/',
-        'publicUrl' => (empty ($_SERVER['HTTPS']) ? 'http' : 'https') . '://' . $_SERVER['HTTP_HOST']
+        'publicUrl' =>
+            (empty ($_SERVER['HTTPS']) ? 'http' : 'https') . '://' . $_SERVER['HTTP_HOST']
+            . '/phast-public-storage/'
     ],
 
     'servicesUrl' => '/phast.php',
@@ -42,7 +44,7 @@ return [
 
             \Kibo\Phast\Filters\HTML\CSSInlining\Filter::class => [
                 'urlRefreshTime' => 7200,
-                'optimizerSizeDiffThreshold' => 1024,
+                'optimizerSizeDiffThreshold' => -1,
                 'whitelist' => [
                     '~^https?://' . preg_quote($_SERVER['HTTP_HOST'], '~') . '/~',
                     '~^https?://fonts\.googleapis\.com/css~' => [

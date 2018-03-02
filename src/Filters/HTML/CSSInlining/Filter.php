@@ -3,11 +3,12 @@
 namespace Kibo\Phast\Filters\HTML\CSSInlining;
 
 use Kibo\Phast\Filters\HTML\BaseHTMLStreamFilter;
+use Kibo\Phast\Filters\Service\PubliclyStoredResultServiceFilter;
 use Kibo\Phast\Logging\LoggingTrait;
 use Kibo\Phast\Parsing\HTML\HTMLStreamElements\Tag;
+use Kibo\Phast\PublicResourcesStorage\Storage;
 use Kibo\Phast\Retrievers\Retriever;
 use Kibo\Phast\Security\ServiceSignature;
-use Kibo\Phast\Services\ServiceFilter;
 use Kibo\Phast\Services\ServiceRequest;
 use Kibo\Phast\ValueObjects\PhastJavaScript;
 use Kibo\Phast\ValueObjects\Resource;
@@ -82,9 +83,14 @@ class Filter extends BaseHTMLStreamFilter {
     private $optimizerFactory;
 
     /**
-     * @var ServiceFilter
+     * @var PubliclyStoredResultServiceFilter
      */
     private $cssFilter;
+
+    /**
+     * @var Storage
+     */
+    private $publicStorage;
 
     /**
      * @var Optimizer
@@ -97,7 +103,8 @@ class Filter extends BaseHTMLStreamFilter {
         array $config,
         Retriever $retriever,
         OptimizerFactory $optimizerFactory,
-        ServiceFilter $cssFilter
+        PubliclyStoredResultServiceFilter $cssFilter,
+        Storage $publicStorage
     ) {
         $this->signature = $signature;
         $this->baseURL = $baseURL;
@@ -107,6 +114,7 @@ class Filter extends BaseHTMLStreamFilter {
         $this->retriever = $retriever;
         $this->optimizerFactory = $optimizerFactory;
         $this->cssFilter = $cssFilter;
+        $this->publicStorage = $publicStorage;
 
         foreach ($config['whitelist'] as $key => $value) {
             if (!is_array($value)) {
@@ -276,7 +284,7 @@ class Filter extends BaseHTMLStreamFilter {
     }
 
     private function makeServiceLink(URL $location, $media) {
-        $url = $this->makeServiceURL($location);
+        $url = $this->makeUrl($location);
         return $this->makeLink(URL::fromString($url), $media);
     }
 
@@ -326,7 +334,7 @@ class Filter extends BaseHTMLStreamFilter {
             $style->setAttribute('media', $media);
         }
         if ($optimized) {
-            $style->setAttribute('data-phast-href', $this->makeServiceURL($url, true));
+            $style->setAttribute('data-phast-href', $this->makeUrl($url, true));
         }
         $style->setTextContent($content);
         return $style;
@@ -340,15 +348,22 @@ class Filter extends BaseHTMLStreamFilter {
         return $link;
     }
 
-    protected function makeServiceURL(URL $originalLocation, $stripImports = false) {
-        $lastModTime = $this->retriever->getLastModificationTime($originalLocation);
-        $params = [
-            'src' => (string) $originalLocation,
-            'cacheMarker' => $lastModTime ? $lastModTime : floor(time() / $this->urlRefreshTime)
-        ];
-        if ($stripImports) {
-            $params['strip-imports'] = 1;
+    private function makeUrl(URL $originalLocation, $stripImports = false) {
+        $resource = Resource::makeWithRetriever($originalLocation, $this->retriever);
+        $params = $stripImports ? ['strip-imports' => 1] : [];
+        $storeKey = $this->cssFilter->getStoreKey($resource, $params);
+        if ($this->publicStorage->exists($storeKey)) {
+            return $this->publicStorage->getPublicURL($storeKey);
         }
+        return $this->makeServiceUrl($resource, $params);
+    }
+
+    private function makeServiceUrl(Resource $resource, array $params) {
+        $lastModTime = $resource->getLastModificationTime();
+        $params = array_merge([
+            'src' => (string) $resource->getUrl(),
+            'cacheMarker' => $lastModTime ? $lastModTime : floor(time() / $this->urlRefreshTime)
+        ], $params);
         return (new ServiceRequest())->withParams($params)
             ->withUrl($this->serviceUrl)
             ->sign($this->signature)

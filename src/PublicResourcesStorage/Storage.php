@@ -32,13 +32,13 @@ class Storage {
 
     public function store($key, Resource $resource) {
         $file = $this->getFullPath($key);
-        @mkdir($this->storageDir, 0700, true);
+        @mkdir($this->storageDir, 0755, true);
         $content = $resource->getContent();
         $size = strlen($content);
         $tmp = $file . uniqid('-tmp-', true);
         if ($size === @file_put_contents($tmp, $content)) {
             @rename($tmp, $file);
-            @chmod($file, 0700);
+            @chmod($file, 0755);
         }
     }
 

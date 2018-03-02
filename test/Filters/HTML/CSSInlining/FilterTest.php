@@ -4,9 +4,10 @@ namespace Kibo\Phast\Filters\HTML\CSSInlining;
 
 use Kibo\Phast\Cache\Cache;
 use Kibo\Phast\Filters\HTML\HTMLFilterTestCase;
+use Kibo\Phast\Filters\Service\PubliclyStoredResultServiceFilter;
+use Kibo\Phast\PublicResourcesStorage\Storage;
 use Kibo\Phast\Retrievers\Retriever;
 use Kibo\Phast\Security\ServiceSignature;
-use Kibo\Phast\Services\ServiceFilter;
 use Kibo\Phast\Services\ServiceRequest;
 use Kibo\Phast\ValueObjects\URL;
 
@@ -15,6 +16,11 @@ class FilterTest extends HTMLFilterTestCase {
     const SERVICE_URL = self::BASE_URL . '/service.php';
 
     const URL_REFRESH_TIME = 7200;
+
+    /**
+     * @var string|null
+     */
+    private $publicStorageUrl;
 
     private $retrieverLastModificationTime;
 
@@ -39,6 +45,7 @@ class FilterTest extends HTMLFilterTestCase {
         parent::setUp();
         ServiceRequest::setDefaultSerializationMode(ServiceRequest::FORMAT_QUERY);
 
+        $this->publicStorageUrl = null;
         $this->retrieverLastModificationTime = false;
         $this->files = [];
         $this->optimizerMock = null;
@@ -95,6 +102,17 @@ class FilterTest extends HTMLFilterTestCase {
         $this->assertContains('&strip-imports', $styles[1]->getAttribute('data-phast-href'));
 
         $this->assertHasCompiled('CSSInlining/inlined-css-retriever.js');
+    }
+
+    public function testRedirectingToStoredResource() {
+        $this->makeLink($this->head, 'the-link-contents', '/the-file.css');
+        $this->publicStorageUrl = 'public-url';
+        $this->applyFilter();
+        $styles = $this->getTheStyles();
+        $this->assertCount(1, $styles);
+
+        $style = $styles[0];
+        $this->assertEquals($this->publicStorageUrl, $style->getAttribute('data-phast-href'));
     }
 
     public function testCallingTheFilterOnBothStylesAndLinks() {
@@ -525,12 +543,27 @@ class FilterTest extends HTMLFilterTestCase {
                     : $this->optimizerMock;
             });
 
-        $cssFilter = $this->createMock(ServiceFilter::class);
+        $cssFilter = $this->createMock(PubliclyStoredResultServiceFilter::class);
         $cssFilter->method('apply')
             ->willReturnCallback(function ($css) {
                 $this->cssFilterCalledTimes++;
                 return $css;
             });
+
+        $storage = $this->createMock(Storage::class);
+        if ($this->publicStorageUrl) {
+            $cssFilter->method('getStoreKey')
+                ->willReturn('the-storage-key');
+            $storage->method('exists')
+                ->with('the-storage-key')
+                ->willReturn(true);
+            $storage->method('getPublicUrl')
+                ->with('the-storage-key')
+                ->willReturn($this->publicStorageUrl);
+        } else {
+            $storage->method('exists')
+                ->willReturn(false);
+        }
 
         $filter = new Filter(
             $signature,
@@ -538,7 +571,8 @@ class FilterTest extends HTMLFilterTestCase {
             $this->config,
             $retriever,
             $optimizerFactory,
-            $cssFilter
+            $cssFilter,
+            $storage
         );
         $this->filter = $filter;
         return parent::applyFilter($htmlInput, $skipResultParsing);
