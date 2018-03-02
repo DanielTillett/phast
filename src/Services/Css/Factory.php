@@ -4,7 +4,8 @@ namespace Kibo\Phast\Services\Css;
 
 use Kibo\Phast\Cache\File\Cache;
 use Kibo\Phast\Filters\CSS\Composite\Factory as CSSCompositeFilterFactory;
-use Kibo\Phast\Filters\Service\CachingServiceFilter;
+use Kibo\Phast\Filters\Service\PubliclyStoringResultServiceFilter;
+use Kibo\Phast\PublicResourcesStorage\Storage;
 use Kibo\Phast\Retrievers\CachingRetriever;
 use Kibo\Phast\Retrievers\LocalRetriever;
 use Kibo\Phast\Retrievers\RemoteRetriever;
@@ -26,16 +27,17 @@ class Factory {
         );
 
         $composite = (new CSSCompositeFilterFactory())->make($config);
-        $caching = new CachingServiceFilter(
-            new Cache($config['cache'], 'css-processing-1'),
-            $composite
+        $public = new PubliclyStoringResultServiceFilter(
+            new Storage($config['publicStorage']['storeDir'], $config['publicStorage']['publicUrl']),
+            $composite,
+            $config['styles']['localUrl']
         );
 
         return new Service(
             (new ServiceSignatureFactory())->make($config),
             [],
             $retriever,
-            $caching,
+            $public,
             $config
         );
     }

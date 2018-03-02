@@ -1,2 +1,3 @@
 /vendor
 /.docker-image-id
+/test/test-app/phast-public-storage/

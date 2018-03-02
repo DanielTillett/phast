@@ -17,6 +17,11 @@ return [
         ]
     ],
 
+    'publicStorage' => [
+        'storeDir' => $_SERVER['DOCUMENT_ROOT'] . '/phast-public-storage/',
+        'publicUrl' => (empty ($_SERVER['HTTPS']) ? 'http' : 'https') . '://' . $_SERVER['HTTP_HOST']
+    ],
+
     'servicesUrl' => '/phast.php',
 
     'documents' => [
@@ -114,6 +119,8 @@ return [
     ],
 
     'styles' => [
+
+        'localUrl' => (empty ($_SERVER['HTTPS']) ? 'http' : 'https') . '://' . $_SERVER['HTTP_HOST'],
 
         'filters' => [
             \Kibo\Phast\Filters\CSS\ImportsStripper\Filter::class => [],

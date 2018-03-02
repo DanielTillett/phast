@@ -3,6 +3,7 @@
 namespace Kibo\Phast\Filters\CSS\Composite;
 
 
+use Kibo\Phast\Retrievers\Retriever;
 use Kibo\Phast\Services\ServiceFilter;
 use Kibo\Phast\ValueObjects\Resource;
 use Kibo\Phast\ValueObjects\URL;
@@ -60,12 +61,50 @@ class FilterTest extends TestCase {
         $hashes[] = $this->filter->getCacheHash($resource2, []);
         $resource3 = Resource::makeWithContent(URL::fromString('http://phast.test/other-url.css'), 'the-content');
         $hashes[] = $this->filter->getCacheHash($resource3, []);
+        $hashes[] = $this->filter->getCacheHash($resource3, ['strip-imports' => '1']);
 
         foreach ($hashes as $idx => $hash) {
             $this->assertTrue(is_string($hash), "Hash $idx is not string");
             $this->assertNotEmpty($hash, "Hash $idx is an empty string");
         }
-        $this->assertEquals($hashes, array_unique($hashes), "Hashed has duplicates");
+        $this->assertEquals($hashes, array_unique($hashes), "There are duplicate hashes");
+    }
+
+    public function testGetStoreKey() {
+        $keys = [];
+        $retriever1 = $this->createMock(Retriever::class);
+        $retriever1->method('getLastModificationTime')
+            ->willReturn(123);
+        $resource = Resource::makeWithRetriever(URL::fromString('http://phast.test'), $retriever1);
+        $keys[] = $this->filter->getStoreKey($resource, []);
+        $this->filter->addFilter($this->createMock(ServiceFilter::class));
+        $keys[] = $this->filter->getStoreKey($resource, []);
+        $this->filter->addFilter($this->createMock(ServiceFilter::class));
+        $keys[] = $this->filter->getStoreKey($resource, []);
+
+        $retriever2 = $this->createMock(Retriever::class);
+        $retriever2->method('getLastModificationTime')
+            ->willReturn(234);
+        $resource2 = Resource::makeWithRetriever(URL::fromString('http://phast.test'), $retriever2);
+        $keys[] = $this->filter->getStoreKey($resource2, []);
+        $resource3 = Resource::makeWithRetriever(URL::fromString('http://phast.test/other-url.css'), $retriever2);
+        $keys[] = $this->filter->getStoreKey($resource3, []);
+        $keys[] = $this->filter->getStoreKey($resource3, ['strip-imports' => '1']);
+
+        foreach ($keys as $idx => $key) {
+            $this->assertTrue(is_string($key), "Key $idx is not string");
+            $this->assertNotEmpty($key, "Key $idx is an empty string");
+        }
+        $this->assertEquals($keys, array_unique($keys), "There are duplicate keys");
+    }
+
+    public function testReadableStoreKey() {
+        $retriever = $this->createMock(Retriever::class);
+        $retriever->method('getLastModificationTime')
+            ->willReturn(123);
+        $resource = Resource::makeWithRetriever(URL::fromString('http://phast.test/css/the-file.css'), $retriever);
+        $key = $this->filter->getStoreKey($resource, []);
+        $this->assertRegExp('/^the-file_[a-f0-9]{32}\.css/', $key);
     }
 
     public function testRemoveComments() {

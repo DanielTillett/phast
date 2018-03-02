@@ -4,12 +4,13 @@
 namespace Kibo\Phast\Filters\CSS\Composite;
 
 use Kibo\Phast\Filters\Service\CachedResultServiceFilter;
+use Kibo\Phast\Filters\Service\PubliclyStoredResultServiceFilter;
 use Kibo\Phast\Logging\LoggingTrait;
 use Kibo\Phast\Services\ServiceFilter;
 use Kibo\Phast\ValueObjects\Resource;
 use Kibo\Phast\Filters\CSS\CommentsRemoval;
 
-class Filter implements CachedResultServiceFilter {
+class Filter implements CachedResultServiceFilter, PubliclyStoredResultServiceFilter {
     use LoggingTrait;
 
     protected $filters = [];
@@ -21,6 +22,20 @@ class Filter implements CachedResultServiceFilter {
     public function addFilter(ServiceFilter $filter) {
         $this->filters[] = $filter;
     }
+
+    public function getStoreKey(Resource $resource, array $request) {
+        $hashParts = join('', array_map('get_class', $this->filters));
+        $hashParts .= $resource->getUrl();
+        $hashParts .= $resource->getLastModificationTime();
+        if (isset ($request['strip-imports'])) {
+            $hashParts .= 'strip-imports';
+        }
+
+        $matches = [];
+        preg_match('/(.*?)(\..*)?$/', basename($resource->getUrl()), $matches);
+        return @$matches[1] . '_' . md5($hashParts) . @$matches[2];
+    }
+
 
     public function getCacheHash(Resource $resource, array $request) {
         $parts = array_map('get_class', $this->filters);
