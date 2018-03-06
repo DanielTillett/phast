@@ -27,19 +27,20 @@ class Factory {
             )
         );
 
+        $cachedMinified = new CachingServiceFilter(
+            new Cache($config['cache'], 'scripts-minified'),
+            new JSMinifierFilter(@$config['scripts']['removeLicenseHeaders'])
+        );
+
         $composite = new Composite\Filter();
-        $composite->addFilter(new JSMinifierFilter(@$config['scripts']['removeLicenseHeaders']));
+        $composite->addFilter($cachedMinified);
         $composite->addFilter(new Cleanup\Filter());
 
-        $filter = new CachingServiceFilter(
-            new Cache($config['cache'], 'scripts-minified'),
-            $composite
-        );
         return new Service(
             (new ServiceSignatureFactory())->make($config),
             $config['documents']['filters'][Filter::class]['match'],
             $retriever,
-            $filter,
+            $composite,
             $config
         );
     }

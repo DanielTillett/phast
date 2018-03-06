@@ -5,10 +5,10 @@ namespace Kibo\Phast\Filters\JavaScript\Minification;
 
 
 use Kibo\Phast\Common\JSMinifier;
-use Kibo\Phast\Services\ServiceFilter;
+use Kibo\Phast\Filters\Service\CachedResultServiceFilter;
 use Kibo\Phast\ValueObjects\Resource;
 
-class JSMinifierFilter implements ServiceFilter {
+class JSMinifierFilter implements CachedResultServiceFilter {
 
     private $removeLicenseHeaders = true;
 
@@ -19,6 +19,11 @@ class JSMinifierFilter implements ServiceFilter {
     public function __construct($removeLicenseHeaders) {
         $this->removeLicenseHeaders = $removeLicenseHeaders;
     }
+
+    public function getCacheHash(Resource $resource, array $request) {
+        return md5($resource->getContent() . ($this->removeLicenseHeaders ? 'no-license' : 'with-license'));
+    }
+
 
     public function apply(Resource $resource, array $request) {
         $minified = (new JSMinifier($resource->getContent(), $this->removeLicenseHeaders))->min();
