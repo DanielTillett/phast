@@ -26,7 +26,7 @@ class Filter extends CompositeServiceFilter implements CachedResultServiceFilter
         }
 
         $matches = [];
-        preg_match('/(.*?)(\..*)?$/', basename($resource->getUrl()), $matches);
+        preg_match('/(.*?)(\..*)?$/', basename($resource->getUrl()->getPath()), $matches);
         return @$matches[1] . '_' . md5($hashParts) . @$matches[2];
     }
 

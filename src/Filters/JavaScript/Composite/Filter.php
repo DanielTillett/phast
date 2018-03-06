@@ -15,7 +15,7 @@ class Filter extends CompositeServiceFilter implements PubliclyStoredResultServi
             . (string) @$request['id']
             . (string) @$request['cacheMarker'];
         $matches = [];
-        preg_match('/(.*?)(\..*)?$/', basename($resource->getUrl()), $matches);
+        preg_match('/(.*?)(\..*)?$/', basename($resource->getUrl()->getPath()), $matches);
         return @$matches[1] . '_' . md5($hashParts) . @$matches[2];
     }
 }
