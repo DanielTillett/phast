@@ -102,7 +102,6 @@ class Filter extends BaseHTMLStreamFilter {
         $id = $this->getRewriteId($src);
         $url = $this->rewriteURL($src, $id);
         $element->setAttribute('src', $url);
-        // TODO: Use an attribute to restore the original src
         $element->setAttribute('data-phast-proxied-script', $id);
     }
 
@@ -111,7 +110,6 @@ class Filter extends BaseHTMLStreamFilter {
         if (!isset ($this->ids[$hash])) {
             $this->ids[$hash] = 0;
         }
-        // TODO: Use the same hashing funcs in php and js
         $id = "s-" . $hash . "-" . ++$this->ids[$hash];
         return $id;
     }
