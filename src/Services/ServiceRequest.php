@@ -81,7 +81,6 @@ class ServiceRequest {
         }
         if (isset ($params['token'])) {
             $instance->token = $params['token'];
-            unset ($params['token']);
         }
         $instance->params = $params;
         if (isset ($params['phast'])) {
@@ -212,6 +211,9 @@ class ServiceRequest {
             parse_str($this->url->getQuery(), $urlParams);
         }
         $params = array_merge($urlParams, $this->params);
+        if (isset ($params['token'])) {
+            unset ($params['token']);
+        }
         if (!empty (self::$propagatedSwitches)) {
             $params['phast'] = self::$propagatedSwitches;
         }

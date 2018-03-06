@@ -132,9 +132,6 @@ class ServiceRequestTest extends TestCase {
         $this->assertTrue($queryRequest->verify($signature));
         $this->assertTrue($pathRequest->verify($signature));
 
-        $this->assertArrayNotHasKey('token', $queryRequest->getParams());
-        $this->assertArrayNotHasKey('token', $pathRequest->getParams());
-
         $clonedRequest = $request->withParams(['key' => 'value']);
         $this->assertFalse($clonedRequest->verify($signature));
 
