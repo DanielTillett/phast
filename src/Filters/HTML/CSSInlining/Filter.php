@@ -350,20 +350,22 @@ class Filter extends BaseHTMLStreamFilter {
 
     private function makeUrl(URL $originalLocation, $stripImports = false) {
         $resource = Resource::makeWithRetriever($originalLocation, $this->retriever);
-        $params = $stripImports ? ['strip-imports' => 1] : [];
+        $lastModTime = $resource->getLastModificationTime();
+        $params = [
+            'src' => (string) $resource->getUrl(),
+            'cacheMarker' => $lastModTime ? $lastModTime : floor(time() / $this->urlRefreshTime)
+        ];
+        if ($stripImports) {
+            $params['strip-imports'] = 1;
+        }
         $storeKey = $this->cssFilter->getStoreKey($resource, $params);
         if ($this->publicStorage->exists($storeKey)) {
             return $this->publicStorage->getPublicURL($storeKey);
         }
-        return $this->makeServiceUrl($resource, $params);
+        return $this->makeServiceUrl($params);
     }
 
-    private function makeServiceUrl(Resource $resource, array $params) {
-        $lastModTime = $resource->getLastModificationTime();
-        $params = array_merge([
-            'src' => (string) $resource->getUrl(),
-            'cacheMarker' => $lastModTime ? $lastModTime : floor(time() / $this->urlRefreshTime)
-        ], $params);
+    private function makeServiceUrl(array $params) {
         return (new ServiceRequest())->withParams($params)
             ->withUrl($this->serviceUrl)
             ->sign($this->signature)

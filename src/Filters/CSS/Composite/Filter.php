@@ -20,7 +20,7 @@ class Filter extends CompositeServiceFilter implements CachedResultServiceFilter
     public function getStoreKey(Resource $resource, array $request) {
         $hashParts = join('', array_map('get_class', $this->filters));
         $hashParts .= $resource->getUrl();
-        $hashParts .= $resource->getLastModificationTime();
+        $hashParts .= (string) @$request['cacheMarker'];
         if (isset ($request['strip-imports'])) {
             $hashParts .= 'strip-imports';
         }

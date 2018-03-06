@@ -72,24 +72,20 @@ class FilterTest extends TestCase {
 
     public function testGetStoreKey() {
         $keys = [];
-        $retriever1 = $this->createMock(Retriever::class);
-        $retriever1->method('getLastModificationTime')
-            ->willReturn(123);
-        $resource = Resource::makeWithRetriever(URL::fromString('http://phast.test'), $retriever1);
-        $keys[] = $this->filter->getStoreKey($resource, []);
+        $params1 = ['cacheMarker' => 123];
+        $resource = Resource::makeWithContent(URL::fromString('http://phast.test'), '');
+        $keys[] = $this->filter->getStoreKey($resource, $params1);
         $this->filter->addFilter($this->createMock(ServiceFilter::class));
-        $keys[] = $this->filter->getStoreKey($resource, []);
+        $keys[] = $this->filter->getStoreKey($resource, $params1);
         $this->filter->addFilter($this->createMock(ServiceFilter::class));
-        $keys[] = $this->filter->getStoreKey($resource, []);
+        $keys[] = $this->filter->getStoreKey($resource, $params1);
 
-        $retriever2 = $this->createMock(Retriever::class);
-        $retriever2->method('getLastModificationTime')
-            ->willReturn(234);
-        $resource2 = Resource::makeWithRetriever(URL::fromString('http://phast.test'), $retriever2);
-        $keys[] = $this->filter->getStoreKey($resource2, []);
-        $resource3 = Resource::makeWithRetriever(URL::fromString('http://phast.test/other-url.css'), $retriever2);
-        $keys[] = $this->filter->getStoreKey($resource3, []);
-        $keys[] = $this->filter->getStoreKey($resource3, ['strip-imports' => '1']);
+        $params2 = ['cacheMarker' => 234];
+        $resource2 = Resource::makeWithContent(URL::fromString('http://phast.test'), '');
+        $keys[] = $this->filter->getStoreKey($resource2, $params2);
+        $resource3 = Resource::makeWithContent(URL::fromString('http://phast.test/other-url.css'), '');
+        $keys[] = $this->filter->getStoreKey($resource3, $params2);
+        $keys[] = $this->filter->getStoreKey($resource3, array_merge(['strip-imports' => '1'], $params2));
 
         foreach ($keys as $idx => $key) {
             $this->assertTrue(is_string($key), "Key $idx is not string");
