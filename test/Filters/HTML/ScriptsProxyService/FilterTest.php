@@ -4,8 +4,10 @@ namespace Kibo\Phast\Filters\HTML\ScriptsProxyService;
 
 use Kibo\Phast\Common\ObjectifiedFunctions;
 use Kibo\Phast\Filters\HTML\HTMLFilterTestCase;
+use Kibo\Phast\PublicResourcesStorage\Storage;
 use Kibo\Phast\Retrievers\Retriever;
 use Kibo\Phast\Services\ServiceRequest;
+use Kibo\Phast\Filters\JavaScript;
 
 class FilterTest extends HTMLFilterTestCase {
 
@@ -25,11 +27,18 @@ class FilterTest extends HTMLFilterTestCase {
 
     private $modTime;
 
+    private $storeKey = 'the-store-key';
+
+    private $storeKeyExists;
+
+    private $storeLink = 'the-store-link';
+
     public function setUp() {
         parent::setUp();
         ServiceRequest::setDefaultSerializationMode(ServiceRequest::FORMAT_QUERY);
 
         $this->modTime = false;
+        $this->storeKeyExists = false;
 
 
         $this->retriever = $this->createMock(Retriever::class);
@@ -38,6 +47,20 @@ class FilterTest extends HTMLFilterTestCase {
                 return $this->modTime;
             });
 
+        $storedFilter = $this->createMock(JavaScript\Composite\Filter::class);
+        $storedFilter->method('getStoreKey')
+            ->willReturn($this->storeKey);
+
+        $storage = $this->createMock(Storage::class);
+        $storage->method('exists')
+            ->with($this->storeKey)
+            ->willReturnCallback(function () {
+                return $this->storeKeyExists;
+            });
+        $storage->method('getPublicUrl')
+            ->with($this->storeKey)
+            ->willReturn($this->storeLink);
+
         $functions = new ObjectifiedFunctions();
         $functions->time = function () {
             return $this->config['urlRefreshTime'] * 2.5;
@@ -45,6 +68,8 @@ class FilterTest extends HTMLFilterTestCase {
         $this->filter = new Filter(
             $this->config,
             $this->retriever,
+            $storedFilter,
+            $storage,
             $functions
         );
     }
@@ -95,6 +120,17 @@ class FilterTest extends HTMLFilterTestCase {
 
         $this->assertEquals($urls[3], $noRewrite1->getAttribute('src'));
         $this->assertEquals($urls[4], $noRewrite2->getAttribute('src'));
+    }
+
+    public function testRewriteToPublicStorage() {
+        $rewrite = $this->makeMarkedElement('script');
+        $rewrite->setAttribute('src', self::BASE_URL . '/rewrite.js');
+        $this->head->appendChild($rewrite);
+        $this->storeKeyExists = true;
+
+        $this->applyFilter();
+        $rewrite = $this->getMatchingElement($rewrite);
+        $this->assertEquals($this->storeLink, $rewrite->getAttribute('src'));
     }
 
     public function testSettingDifferentIds() {

@@ -7,9 +7,12 @@ use Kibo\Phast\Filters\HTML\BaseHTMLStreamFilter;
 use Kibo\Phast\Filters\HTML\Helpers\JSDetectorTrait;
 use Kibo\Phast\Logging\LoggingTrait;
 use Kibo\Phast\Parsing\HTML\HTMLStreamElements\Tag;
+use Kibo\Phast\PublicResourcesStorage\Storage;
 use Kibo\Phast\Retrievers\Retriever;
 use Kibo\Phast\Services\ServiceRequest;
+use Kibo\Phast\Filters\JavaScript;
 use Kibo\Phast\ValueObjects\PhastJavaScript;
+use Kibo\Phast\ValueObjects\Resource;
 use Kibo\Phast\ValueObjects\URL;
 
 class Filter extends BaseHTMLStreamFilter {
@@ -24,6 +27,16 @@ class Filter extends BaseHTMLStreamFilter {
      * @var Retriever
      */
     private $retriever;
+
+    /**
+     * @var JavaScript\Composite\Filter
+     */
+    private $filter;
+
+    /**
+     * @var Storage
+     */
+    private $storage;
 
     /**
      * @var ObjectifiedFunctions
@@ -41,15 +54,21 @@ class Filter extends BaseHTMLStreamFilter {
      * Filter constructor.
      * @param array $config
      * @param Retriever $retriever
+     * @param JavaScript\Composite\Filter $filter
+     * @param Storage $storage
      * @param ObjectifiedFunctions|null $functions
      */
     public function __construct(
         array $config,
         Retriever $retriever,
+        JavaScript\Composite\Filter $filter,
+        Storage $storage,
         ObjectifiedFunctions $functions = null
     ) {
         $this->config = $config;
         $this->retriever = $retriever;
+        $this->filter = $filter;
+        $this->storage = $storage;
         $this->functions = is_null($functions) ? new ObjectifiedFunctions() : $functions;
     }
 
@@ -103,6 +122,13 @@ class Filter extends BaseHTMLStreamFilter {
                              ? $lastModTime
                              : floor($this->functions->time() / $this->config['urlRefreshTime'])
         ];
+        $storageKey = $this->filter->getStoreKey(
+            Resource::makeWithRetriever($url, $this->retriever),
+            $params
+        );
+        if ($this->storage->exists($storageKey)) {
+            return $this->storage->getPublicURL($storageKey);
+        }
         return (new ServiceRequest())
             ->withUrl(URL::fromString($this->config['serviceUrl']))
             ->withParams($params)
