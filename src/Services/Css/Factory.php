@@ -29,8 +29,7 @@ class Factory {
         $composite = (new CSSCompositeFilterFactory())->make($config);
         $public = new PubliclyStoringResultServiceFilter(
             (new PublicResourcesStorage\Factory())->make($config),
-            $composite,
-            $config['styles']['localUrl']
+            $composite
         );
 
         return new Service(

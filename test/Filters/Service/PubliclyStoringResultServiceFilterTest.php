@@ -13,7 +13,7 @@ class PubliclyStoringResultServiceFilterTest extends TestCase {
     /**
      * @var Resource
      */
-    private $filteredResource;
+    private $request;
 
     /**
      * @var bool
@@ -21,27 +21,22 @@ class PubliclyStoringResultServiceFilterTest extends TestCase {
     private $shouldStore;
 
     public function testApply() {
-        $this->filteredResource = Resource::makeWithContent(
-            URL::fromString('http://phast.test/resource'),
-            'the-content'
-        );
+        $this->request = ['param' => 'value', 'token' => 'the-token'];
         $this->shouldStore = true;
         $this->performTest();
-
     }
 
     public function testNotStoringNonLocal() {
-        $this->filteredResource = Resource::makeWithContent(
-            URL::fromString('http://somwhere-else.test/resource'),
-            'the-content'
-        );
+        $this->request = ['param' => 'value'];
         $this->shouldStore = false;
         $this->performTest();
     }
 
     private function performTest() {
-        $resource = $this->filteredResource;
-        $request = ['param' => 'value'];
+        $resource = Resource::makeWithContent(
+            URL::fromString('http://phast.test/resource'),
+            'the-content'
+        );
         $result = $resource->withContent('filtered');
 
         $storedFilter = $this->createMock(PubliclyStoredResultServiceFilter::class);
@@ -50,7 +45,7 @@ class PubliclyStoringResultServiceFilterTest extends TestCase {
             ->willReturn('the-key');
         $storedFilter->expects($this->once())
             ->method('apply')
-            ->with($resource, $request)
+            ->with($resource, $this->request)
             ->willReturn($result);
 
         $storeExpectation = $this->shouldStore ? $this->once() : $this->never();
@@ -59,8 +54,8 @@ class PubliclyStoringResultServiceFilterTest extends TestCase {
             ->method('store')
             ->with('the-key', $result);
 
-        $filter = new PubliclyStoringResultServiceFilter($store, $storedFilter, 'http://phast.test');
-        $actual = $filter->apply($resource, $request);
+        $filter = new PubliclyStoringResultServiceFilter($store, $storedFilter);
+        $actual = $filter->apply($resource, $this->request);
         $this->assertSame($result, $actual);
     }
 

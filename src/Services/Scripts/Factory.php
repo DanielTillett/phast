@@ -40,8 +40,7 @@ class Factory {
 
         $stored = new PubliclyStoringResultServiceFilter(
             (new PublicResourcesStorage\Factory())->make($config),
-            $composite,
-            $config['scripts']['localUrl']
+            $composite
         );
 
         return new Service(
