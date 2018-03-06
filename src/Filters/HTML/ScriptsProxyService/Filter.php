@@ -9,6 +9,7 @@ use Kibo\Phast\Logging\LoggingTrait;
 use Kibo\Phast\Parsing\HTML\HTMLStreamElements\Tag;
 use Kibo\Phast\PublicResourcesStorage\Storage;
 use Kibo\Phast\Retrievers\Retriever;
+use Kibo\Phast\Security\ServiceSignature;
 use Kibo\Phast\Services\ServiceRequest;
 use Kibo\Phast\Filters\JavaScript;
 use Kibo\Phast\ValueObjects\PhastJavaScript;
@@ -27,6 +28,11 @@ class Filter extends BaseHTMLStreamFilter {
      * @var Retriever
      */
     private $retriever;
+
+    /**
+     * @var ServiceSignature
+     */
+    private $signature;
 
     /**
      * @var JavaScript\Composite\Filter
@@ -54,6 +60,7 @@ class Filter extends BaseHTMLStreamFilter {
      * Filter constructor.
      * @param array $config
      * @param Retriever $retriever
+     * @param ServiceSignature $signature
      * @param JavaScript\Composite\Filter $filter
      * @param Storage $storage
      * @param ObjectifiedFunctions|null $functions
@@ -61,12 +68,14 @@ class Filter extends BaseHTMLStreamFilter {
     public function __construct(
         array $config,
         Retriever $retriever,
+        ServiceSignature $signature,
         JavaScript\Composite\Filter $filter,
         Storage $storage,
         ObjectifiedFunctions $functions = null
     ) {
         $this->config = $config;
         $this->retriever = $retriever;
+        $this->signature = $signature;
         $this->filter = $filter;
         $this->storage = $storage;
         $this->functions = is_null($functions) ? new ObjectifiedFunctions() : $functions;
@@ -132,6 +141,7 @@ class Filter extends BaseHTMLStreamFilter {
         return (new ServiceRequest())
             ->withUrl(URL::fromString($this->config['serviceUrl']))
             ->withParams($params)
+            ->sign($this->signature)
             ->serialize();
     }
 

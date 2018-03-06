@@ -6,6 +6,7 @@ use Kibo\Phast\Common\ObjectifiedFunctions;
 use Kibo\Phast\Filters\HTML\HTMLFilterTestCase;
 use Kibo\Phast\PublicResourcesStorage\Storage;
 use Kibo\Phast\Retrievers\Retriever;
+use Kibo\Phast\Security\ServiceSignature;
 use Kibo\Phast\Services\ServiceRequest;
 use Kibo\Phast\Filters\JavaScript;
 
@@ -47,6 +48,10 @@ class FilterTest extends HTMLFilterTestCase {
                 return $this->modTime;
             });
 
+        $signature = $this->createMock(ServiceSignature::class);
+        $signature->method('sign')
+            ->willReturn('the-token');
+
         $storedFilter = $this->createMock(JavaScript\Composite\Filter::class);
         $storedFilter->method('getStoreKey')
             ->willReturn($this->storeKey);
@@ -68,6 +73,7 @@ class FilterTest extends HTMLFilterTestCase {
         $this->filter = new Filter(
             $this->config,
             $this->retriever,
+            $signature,
             $storedFilter,
             $storage,
             $functions
@@ -114,8 +120,10 @@ class FilterTest extends HTMLFilterTestCase {
             $this->assertEquals('script-proxy.php', $url['path']);
             $this->assertArrayHasKey('src', $query);
             $this->assertArrayHasKey('cacheMarker', $query);
+            $this->assertArrayHasKey('token', $query);
             $this->assertEquals($urls[$i], $query['src']);
             $this->assertEquals(2, $query['cacheMarker']);
+            $this->assertEquals('the-token', $query['token']);
         }
 
         $this->assertEquals($urls[3], $noRewrite1->getAttribute('src'));

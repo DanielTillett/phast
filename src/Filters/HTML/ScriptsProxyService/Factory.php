@@ -6,6 +6,7 @@ use Kibo\Phast\Filters\HTML\HTMLFilterFactory;
 use Kibo\Phast\Retrievers\LocalRetriever;
 use Kibo\Phast\Filters\JavaScript;
 use Kibo\Phast\PublicResourcesStorage;
+use Kibo\Phast\Security\ServiceSignatureFactory;
 
 class Factory implements HTMLFilterFactory {
 
@@ -17,6 +18,7 @@ class Factory implements HTMLFilterFactory {
         return new Filter(
             $config['documents']['filters'][Filter::class],
             new LocalRetriever($config['retrieverMap']),
+            (new ServiceSignatureFactory())->make($config),
             new JavaScript\Composite\Filter(),
             (new PublicResourcesStorage\Factory())->make($config)
         );
