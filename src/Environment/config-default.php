@@ -157,7 +157,8 @@ return [
     ],
 
     'scripts' => [
-        'removeLicenseHeaders' => false
+        'removeLicenseHeaders' => false,
+        'localUrl' => (empty ($_SERVER['HTTPS']) ? 'http' : 'https') . '://' . $_SERVER['HTTP_HOST'],
     ]
 ];
 
